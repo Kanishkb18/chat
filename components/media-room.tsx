@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import "@livekit/components-styles";
 import { LiveKitRoom, VideoConference } from "@livekit/components-react";
-import { useUser } from "@clerk/nextjs";
+import { useSession } from "next-auth/react";
 import { Loader2 } from "lucide-react";
 
 interface MediaRoomProps {
@@ -13,16 +13,16 @@ interface MediaRoomProps {
 }
 
 export function MediaRoom({ chatId, video, audio }: MediaRoomProps) {
-  const { user } = useUser();
+  const { data: session } = useSession();
   const [token, setToken] = useState("");
 
   useEffect(() => {
-    if (!user?.firstName) return;
+    if (!session?.user?.name) return;
 
     (async () => {
       try {
         const response = await fetch(
-          `/api/livekit?room=${chatId}&username=${user.firstName}`
+          `/api/livekit?room=${chatId}&username=${session.user.name}`
         );
         const data = await response.json();
         setToken(data.token);
@@ -30,7 +30,7 @@ export function MediaRoom({ chatId, video, audio }: MediaRoomProps) {
         console.error(error);
       }
     })();
-  }, [user?.firstName, chatId]);
+  }, [session?.user?.name, chatId]);
 
   if (token === "")
     return (

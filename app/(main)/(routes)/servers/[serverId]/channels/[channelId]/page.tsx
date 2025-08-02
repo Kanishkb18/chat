@@ -1,5 +1,4 @@
 import React from "react";
-import { redirectToSignIn } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 import { ChannelType } from "@prisma/client";
 
@@ -22,7 +21,7 @@ export default async function ChannelIdPage({
 }: ChannelIdPageProps) {
   const profile = await currentProfile();
 
-  if (!profile) return redirectToSignIn();
+  if (!profile) return redirect("/sign-in");
 
   const channel = await db.channel.findUnique({
     where: { id: channelId }

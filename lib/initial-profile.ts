@@ -1,32 +1,24 @@
-import { currentUser, redirectToSignIn } from "@clerk/nextjs";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+import { authOptions } from "@/lib/auth";
 
 import { db } from "@/lib/db";
 
 export const initialProfile = async () => {
-  const user = await currentUser();
+  const session = await getServerSession(authOptions);
 
-  if (!user) return redirectToSignIn();
+  if (!session?.user) {
+    redirect("/sign-in");
+  }
 
   const profile = await db.profile.findUnique({
     where: {
-      userId: user.id
+      id: session.user.id
     }
   });
 
   if (profile) return profile;
 
-  const name = user.firstName
-    ? `${user.firstName}${user.lastName ? " " + user.lastName : ""}`
-    : user.id;
-
-  const newProfile = await db.profile.create({
-    data: {
-      userId: user.id,
-      name,
-      imageUrl: user.imageUrl,
-      email: user.emailAddresses[0].emailAddress
-    }
-  });
-
-  return newProfile;
+  // Profile should already exist from auth, but if not, redirect to sign-in
+  redirect("/sign-in");
 };
