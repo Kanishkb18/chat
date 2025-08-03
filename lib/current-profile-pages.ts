@@ -1,15 +1,15 @@
 import { getServerSession } from "next-auth";
 import { NextApiRequest, NextApiResponse } from "next";
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "@/pages/api/auth/[...nextauth]";
 
-import { db } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 export const currentProfilePages = async (req: NextApiRequest, res: NextApiResponse) => {
   const session = await getServerSession(req, res, authOptions);
 
   if (!session?.user?.id) return null;
 
-  const profile = await db.profile.findUnique({
+  const profile = await prisma.profile.findUnique({
     where: { id: session.user.id }
   });
 

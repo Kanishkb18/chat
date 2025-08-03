@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 export const getOrCreateConversation = async (
   memberOneId: string,
@@ -20,7 +20,7 @@ const findConversation = async (
   memberTwoId: string
 ) => {
   try {
-    return await db.conversation.findFirst({
+    return await prisma.conversation.findFirst({
       where: {
         AND: [{ memberOneId }, { memberTwoId }]
       },
@@ -43,7 +43,7 @@ const createNewConversation = async (
   memberTwoId: string
 ) => {
   try {
-    return await db.conversation.create({
+    return await prisma.conversation.create({
       data: {
         memberOneId,
         memberTwoId

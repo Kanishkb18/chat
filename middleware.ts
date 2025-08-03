@@ -11,8 +11,7 @@ export default withAuth(
         if (req.nextUrl.pathname.startsWith("/api/uploadthing")) {
           return true;
         }
-        if (req.nextUrl.pathname.startsWith("/sign-in") || 
-            req.nextUrl.pathname.startsWith("/sign-up")) {
+        if (req.nextUrl.pathname.startsWith("/api/auth")) {
           return true;
         }
         // Require authentication for all other routes

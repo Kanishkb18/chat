@@ -1,17 +1,16 @@
 import { getServerSession } from "next-auth";
-import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "@/pages/api/auth/[...nextauth]";
 
-import { db } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
-export const initialProfile = async () => {
-  const session = await getServerSession(authOptions);
+export const initialProfile = async (req?: any, res?: any) => {
+  const session = await getServerSession(req, res, authOptions);
 
   if (!session?.user) {
-    redirect("/sign-in");
+    return null;
   }
 
-  const profile = await db.profile.findUnique({
+  const profile = await prisma.profile.findUnique({
     where: {
       id: session.user.id
     }
@@ -19,6 +18,5 @@ export const initialProfile = async () => {
 
   if (profile) return profile;
 
-  // Profile should already exist from auth, but if not, redirect to sign-in
-  redirect("/sign-in");
+  return null;
 };

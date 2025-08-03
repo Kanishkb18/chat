@@ -1,10 +1,9 @@
 import React from "react";
-import { redirect } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 import { ChannelType, MemberRole } from "@prisma/client";
 import { Hash, Mic, ShieldAlert, ShieldCheck, Video } from "lucide-react";
-
-import { currentProfile } from "@/lib/current-profile";
-import { db } from "@/lib/db";
 
 import { ServerHeader } from "@/components/server/server-header";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -28,31 +27,50 @@ const roleIconMap = {
   [MemberRole.ADMIN]: <ShieldAlert className="h-4 w-4 mr-2 text-rose-500" />
 };
 
-export async function ServerSidebar({ serverId }: { serverId: string }) {
-  const profile = await currentProfile();
+export function ServerSidebar({ serverId }: { serverId: string }) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [server, setServer] = useState(null);
+  const [role, setRole] = useState(null);
 
-  if (!profile) return redirect("/");
-
-  const server = await db.server.findUnique({
-    where: {
-      id: serverId
-    },
-    include: {
-      channels: {
-        orderBy: {
-          createdAt: "asc"
-        }
-      },
-      members: {
-        include: {
-          profile: true
-        },
-        orderBy: {
-          role: "asc"
-        }
-      }
+  useEffect(() => {
+    if (status === "loading") return;
+    
+    if (!session?.user?.id) {
+      router.push("/api/auth/signin");
+      return;
     }
-  });
+
+    const fetchServer = async () => {
+      try {
+        const response = await fetch(`/api/servers/${serverId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setServer(data);
+          
+          const userRole = data.members.find(
+            (member) => member.profileId === session.user.id
+          )?.role;
+          setRole(userRole);
+        } else {
+          router.push("/");
+        }
+      } catch (error) {
+        console.error('Failed to fetch server:', error);
+        router.push("/");
+      }
+    };
+
+    fetchServer();
+  }, [serverId, session, status, router]);
+
+  if (status === "loading" || !server) {
+    return <div>Loading...</div>;
+  }
+
+  if (!session) {
+    return null;
+  }
 
   const textChannels = server?.channels.filter(
     (channel) => channel.type === ChannelType.TEXT
@@ -65,14 +83,8 @@ export async function ServerSidebar({ serverId }: { serverId: string }) {
   );
 
   const members = server?.members.filter(
-    (member) => member.profileId !== profile.id
+    (member) => member.profileId !== session.user.id
   );
-
-  if (!server) return redirect("/");
-
-  const role = server.members.find(
-    (member) => member.profileId === profile.id
-  )?.role;
 
   return (
     <div className="flex flex-col h-full text-primary w-full dark:bg-[#2b2d31] bg-[#f2f3f5]">
